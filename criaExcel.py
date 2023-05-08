@@ -1,35 +1,45 @@
-def criaExcel():
-    query = 		f'''  
-                             SELECT
-                                [COLUNA]
-                             FROM TB_ANALITICO_MONITORIA WITH(NOLOCK)   
-                             WHERE [COLUNA] = '2023-03-06T15:38'
+import os
+from openpyxl import Workbook
+import datetime
+import acoesBancoDados
 
+def cria_excel():
+    consulta = '''  
+        SELECT
+            [COLUNA]
+        FROM TB_ANALITICO_MONITORIA WITH(NOLOCK)   
+        WHERE [COLUNA] = '2023-03-06T15:38'
+    '''
 
-                              '''
-    conexaoBanco = acoesBancoDados.acaoBancoDados('server', 'banco', 'login','senha', query)
-    executaDadosParaExcel = conexao.executa()
+    # Conecta ao banco de dados e executa a consulta
+    with acoesBancoDados.acaoBancoDados('server', 'banco', 'login','senha', consulta) as conexao_banco:
+        executa_dados_para_excel = conexao_banco.executa()
 
-    # GERA O ARQUIVO EM EXCEL
-    arquivo_excel = Workbook()
+    # Cria o arquivo em Excel
+    planilha_excel = Workbook()
 
     # Monta a tabela
-    planilha = arquivo_excel.active
+    planilha = planilha_excel.active
     planilha.append(['Nome da sua coluna'])
 
-    for linha in acompanhamentoGeral:
+    for linha in executa_dados_para_excel:
         planilha.append(list(linha))
 
-    cont = 1
-    while cont < 10:
-        column = str(chr(64 + cont))
-        tamanho = len(planilha.cell(row=1, column=cont).value) + 5
-        planilha.column_dimensions[column].width = tamanho
-        cont += 1
+    # Define a largura das colunas
+    for coluna in range(1, 10):
+        letra_coluna = chr(64 + coluna)
+        largura = len(planilha.cell(row=1, column=coluna).value) + 5
+        planilha.column_dimensions[letra_coluna].width = largura
 
     # Salva o arquivo
-    dtHoje = datetime.date.today()
-    nomeArquivo = f'nome_do_seu_excel.xlsx'
+    dt_hoje = datetime.date.today()
+    nome_arquivo = f'nome_do_seu_excel.xlsx'
     caminho = os.path.abspath("caminho para salvar o documento, como exemplo C:\documento\  ")
-    arquivo_excel.save(f'{caminho}\{nomeArquivo}')
-    arquivo_excel.close()
+    planilha_excel.save(os.path.join(caminho, nome_arquivo))
+
+    # Fecha o arquivo
+    planilha_excel.close()
+    
+    
+def main():
+    cria_excel()
